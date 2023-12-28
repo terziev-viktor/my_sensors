@@ -6,7 +6,8 @@
 struct Console;
 typedef struct Console Console;
 
-void Console_init(UART_HandleTypeDef * huart);
-void Console_print(const char * format, ...);
+void Console_Init(UART_HandleTypeDef *huart);
+
+void Console_Print(const char *format, ...);
 
 #endif //MY_SENSORS_CONSOLE_H

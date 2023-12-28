@@ -16,14 +16,14 @@ struct Console
 
 Console console;
 
-void Console_init(UART_HandleTypeDef * huart)
+void Console_Init(UART_HandleTypeDef *huart)
 {
     assert(console.initialized == false);
     console.huart = huart;
     console.initialized = true;
 }
 
-void Console_print(const char * const format, ...)
+void Console_Print(const char *format, ...)
 {
     assert(console.initialized == true);
     memset(console.buffer, '\0', sizeof console.buffer);

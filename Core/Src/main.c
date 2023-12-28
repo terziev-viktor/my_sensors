@@ -17,7 +17,6 @@
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
-#include <stdio.h>
 #include "main.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -61,8 +60,6 @@ static void MX_I2C1_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-float Temperature, Pressure, Humidity;
-
 /* USER CODE END 0 */
 
 /**
@@ -96,21 +93,20 @@ int main(void)
   MX_USART2_UART_Init();
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
-  Console_init(&huart2);
-  BME280_Config(OSRS_16, OSRS_16, OSRS_16, MODE_NORMAL, T_SB_0p5, IIR_16);
+    Console_Init(&huart2);
+    BME280_Init(OSRS_16, OSRS_16, OSRS_16, MODE_NORMAL, T_SB_0p5, IIR_16);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-      Console_print("Measuring... \r\n");
       BME280_Measure();
-      Console_print("Temperature: %.2f \r\n", Temperature);
-      Console_print("Humidity: %.2f \r\n", Humidity);
-      Console_print("Pressure: %.2f \r\n", Pressure);
+      Console_Print("Temperature: %.2f \r\n", BME280_GetTemperature());
+      Console_Print("Humidity: %.2f \r\n", BME280_GetHumidity());
+      Console_Print("Pressure: %.2f \r\n", BME280_GetPressure());
 
-      HAL_Delay(500);
+      HAL_Delay(1500);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
