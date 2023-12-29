@@ -18,11 +18,14 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "cmsis_os.h"
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "bme280.h"
 #include "console.h"
 #include "display.h"
+#include <assert.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -45,6 +48,20 @@ I2C_HandleTypeDef hi2c1;
 
 UART_HandleTypeDef huart2;
 
+/* Definitions for blinkLed */
+osThreadId_t blinkLedHandle;
+const osThreadAttr_t blinkLed_attributes = {
+        .name = "blinkLed",
+        .stack_size = 128 * 4,
+        .priority = (osPriority_t) osPriorityBelowNormal,
+};
+/* Definitions for i2cBusUsersTask */
+osThreadId_t i2cBusUsersTaskHandle;
+const osThreadAttr_t i2cBusUsersTask_attributes = {
+        .name = "i2cBusUsersTask",
+        .stack_size = 128 * 16,
+        .priority = (osPriority_t) osPriorityNormal,
+};
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -54,6 +71,11 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_I2C1_Init(void);
+
+void StartBlinkLed(void *argument);
+
+void Starti2cUsersTask(void *argument);
+
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -94,33 +116,56 @@ int main(void)
   MX_USART2_UART_Init();
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
-    Console_Init(&huart2);
-    BME280_Init(OSRS_16, OSRS_16, OSRS_16, MODE_NORMAL, T_SB_0p5, IIR_16);
-    Display_Init(&hi2c1);
 
-    static int count = 0;
   /* USER CODE END 2 */
 
+    /* Init scheduler */
+    osKernelInitialize();
+
+    /* USER CODE BEGIN RTOS_MUTEX */
+    /* add mutexes, ... */
+    /* USER CODE END RTOS_MUTEX */
+
+    /* USER CODE BEGIN RTOS_SEMAPHORES */
+    /* add semaphores, ... */
+    /* USER CODE END RTOS_SEMAPHORES */
+
+    /* USER CODE BEGIN RTOS_TIMERS */
+    /* start timers, add new ones, ... */
+    /* USER CODE END RTOS_TIMERS */
+
+    /* USER CODE BEGIN RTOS_QUEUES */
+    /* add queues, ... */
+    /* USER CODE END RTOS_QUEUES */
+
+    /* Create the thread(s) */
+    /* creation of blinkLed */
+    blinkLedHandle = osThreadNew(StartBlinkLed, NULL, &blinkLed_attributes);
+
+    /* creation of i2cBusUsersTask */
+    i2cBusUsersTaskHandle = osThreadNew(Starti2cUsersTask, NULL, &i2cBusUsersTask_attributes);
+
+    /* USER CODE BEGIN RTOS_THREADS */
+    /* add threads, ... */
+    /* USER CODE END RTOS_THREADS */
+
+    /* USER CODE BEGIN RTOS_EVENTS */
+    /* add events, ... */
+    /* USER CODE END RTOS_EVENTS */
+
+    /* Start scheduler */
+    osKernelStart();
+
+    /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
-      if(BME280_IsInitialized()) {
-          BME280_Measure();
-          Console_Print("Temperature: %.2f \r\n", BME280_GetTemperature());
-          Console_Print("Humidity: %.2f \r\n", BME280_GetHumidity());
-          Console_Print("Pressure: %.2f \r\n", BME280_GetPressure());
-          Display_Print("Humid:%.2fTemp:%.2f", BME280_GetHumidity(), BME280_GetTemperature());
-      } else {
-          Display_Print("Humidity: N/A %d\r\n", count++);
-      }
+    while (1) {
 
-      HAL_Delay(1000);
+    }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
   /* USER CODE END 3 */
-  }
 }
 
 /**
@@ -294,11 +339,79 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE END 4 */
 
+/* USER CODE BEGIN Header_StartBlinkLed */
+/**
+  * @brief  Function implementing the blinkLed thread.
+  * @param  argument: Not used
+  * @retval None
+  */
+/* USER CODE END Header_StartBlinkLed */
+void StartBlinkLed(void *argument) {
+    /* USER CODE BEGIN 5 */
+    /* Infinite loop */
+    while (1) {
+        HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+        osDelay(500);
+    }
+    assert(false);
+    /* USER CODE END 5 */
+}
+
+/* USER CODE BEGIN Header_Starti2cUsersTask */
+/**
+* @brief Function implementing the i2cBusUsersTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_Starti2cUsersTask */
+void Starti2cUsersTask(void *argument) {
+    /* USER CODE BEGIN Starti2cUsersTask */
+    /* Infinite loop */
+    static int count = 0;
+    Console_Init(&huart2);
+    BME280_Init(OSRS_16, OSRS_16, OSRS_16, MODE_NORMAL, T_SB_0p5, IIR_16);
+    Display_Init(&hi2c1);
+
+    for (;;) {
+        if (BME280_IsInitialized()) {
+            BME280_Measure();
+            Console_Print("Temperature: %.2f \r\n", BME280_GetTemperature());
+            Console_Print("Humidity: %.2f \r\n", BME280_GetHumidity());
+            Console_Print("Pressure: %.2f \r\n", BME280_GetPressure());
+            Display_Print("Humid:%.2fTemp:%.2f", BME280_GetHumidity(), BME280_GetTemperature());
+        } else {
+            Display_Print("Humidity: N/A %d\r\n", count++);
+        }
+        osDelay(1000);
+    }
+    /* USER CODE END Starti2cUsersTask */
+}
+
+/**
+  * @brief  Period elapsed callback in non blocking mode
+  * @note   This function is called  when TIM6 interrupt took place, inside
+  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+  * a global variable "uwTick" used as application time base.
+  * @param  htim : TIM handle
+  * @retval None
+  */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+    /* USER CODE BEGIN Callback 0 */
+
+    /* USER CODE END Callback 0 */
+    if (htim->Instance == TIM6) {
+        HAL_IncTick();
+    }
+    /* USER CODE BEGIN Callback 1 */
+
+    /* USER CODE END Callback 1 */
+}
+
 /**
   * @brief  This function is executed in case of error occurrence.
   * @retval None
   */
-_Noreturn void Error_Handler(void)
+void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
