@@ -28,7 +28,6 @@
 // https://controllerstech.com/bme280-with-stm32/#goog_rewarded
 
 #include "bme280.h"
-#include <stdbool.h>
 #include <assert.h>
 #include <string.h>
 
@@ -48,6 +47,8 @@ struct BME280 {
     float Pressure;
     float Humidity;
     uint8_t chipID;
+
+    bool initialized;
 };
 
 static BME280 self;
@@ -116,7 +117,16 @@ void TrimRead(void) {
 
 int BME280_Init(uint8_t osrs_t, uint8_t osrs_p, uint8_t osrs_h, uint8_t mode, uint8_t t_sb, uint8_t filter) {
     // Read the Trimming parameters
+    assert(self.initialized == false);
     memset(&self, 0, sizeof self);
+
+    // Check the chip ID before initializing
+    const HAL_StatusTypeDef status = HAL_I2C_Mem_Read(&hi2c1, BME280_ADDRESS, ID_REG, 1, &self.chipID, 1, 2000);
+    if (status != HAL_OK || self.chipID != 0x60) {
+        // bme280 is not connected
+        return -1;
+    }
+
     TrimRead();
 
     uint8_t datatowrite = 0;
@@ -165,6 +175,7 @@ int BME280_Init(uint8_t osrs_t, uint8_t osrs_p, uint8_t osrs_h, uint8_t mode, ui
         return -1;
     }
 
+    self.initialized = true;
     return 0;
 }
 
@@ -349,4 +360,8 @@ float BME280_GetPressure(void) {
 
 float BME280_GetHumidity(void) {
     return self.Humidity;
+}
+
+bool BME280_IsInitialized() {
+    return self.initialized;
 }

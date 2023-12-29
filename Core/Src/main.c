@@ -22,6 +22,7 @@
 /* USER CODE BEGIN Includes */
 #include "bme280.h"
 #include "console.h"
+#include "display.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -95,18 +96,26 @@ int main(void)
   /* USER CODE BEGIN 2 */
     Console_Init(&huart2);
     BME280_Init(OSRS_16, OSRS_16, OSRS_16, MODE_NORMAL, T_SB_0p5, IIR_16);
+    Display_Init(&hi2c1);
+
+    static int count = 0;
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-      BME280_Measure();
-      Console_Print("Temperature: %.2f \r\n", BME280_GetTemperature());
-      Console_Print("Humidity: %.2f \r\n", BME280_GetHumidity());
-      Console_Print("Pressure: %.2f \r\n", BME280_GetPressure());
+      if(BME280_IsInitialized()) {
+          BME280_Measure();
+          Console_Print("Temperature: %.2f \r\n", BME280_GetTemperature());
+          Console_Print("Humidity: %.2f \r\n", BME280_GetHumidity());
+          Console_Print("Pressure: %.2f \r\n", BME280_GetPressure());
+          Display_Print("Humid:%.2fTemp:%.2f", BME280_GetHumidity(), BME280_GetTemperature());
+      } else {
+          Display_Print("Humidity: N/A %d\r\n", count++);
+      }
 
-      HAL_Delay(1500);
+      HAL_Delay(1000);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

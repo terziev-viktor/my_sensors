@@ -22,6 +22,7 @@
 #ifndef INC_BME280_STM32_H_
 #define INC_BME280_STM32_H_
 
+#include <stdbool.h>
 #include "stm32f3xx_hal.h"
 
 /* Configuration for the BME280
@@ -64,6 +65,8 @@ float BME280_GetTemperature(void);
 float BME280_GetPressure(void);
 
 float BME280_GetHumidity(void);
+
+bool BME280_IsInitialized();
 
 // Oversampling definitions
 #define OSRS_OFF    	0x00
