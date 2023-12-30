@@ -378,7 +378,7 @@ void Starti2cUsersTask(void *argument) {
             Console_Print("Temperature: %.2f \r\n", BME280_GetTemperature());
             Console_Print("Humidity: %.2f \r\n", BME280_GetHumidity());
             Console_Print("Pressure: %.2f \r\n", BME280_GetPressure());
-            Display_Print("Humid:%.2fTemp:%.2f", BME280_GetHumidity(), BME280_GetTemperature());
+            Display_Print("Humid:%.2fTemp:%.2f Pr:%.2f ----------", BME280_GetHumidity(), BME280_GetTemperature(), BME280_GetPressure() / 100.0f);
         } else {
             Display_Print("Humidity: N/A %d\r\n", count++);
         }

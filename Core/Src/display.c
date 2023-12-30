@@ -248,7 +248,9 @@ void Display_UpdateScreen(void) {
 
 void Display_DrawPixel(uint8_t x, uint8_t y, DISPLAY_COLOR color) {
     assert(self.initialized == true);
-    assert(x < SSD1306_WIDTH && y < SSD1306_HEIGHT);
+    if (x >= SSD1306_WIDTH || y >= SSD1306_HEIGHT) {
+        return;
+    }
 
     // Draw in the right color
     if (color == White) {
