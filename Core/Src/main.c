@@ -416,7 +416,7 @@ static float to_cm(float meters) {
     return meters * 100.0f;
 }
 
-void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef * htim) {
+void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
     static uint16_t first = 0;
     static uint16_t second = 0;
     static bool first_edge = true;
@@ -447,23 +447,24 @@ void Starti2cUsersTask(void *argument) {
     /* USER CODE BEGIN Starti2cUsersTask */
     /* Infinite loop */
     static int count = 0;
+    static HCSR04_Execution_State_t state = HCSR04_BEGIN;
     Console_Init(&huart2);
     BME280_Init(OSRS_16, OSRS_16, OSRS_16, MODE_NORMAL, T_SB_0p5, IIR_16);
+    assert(BME280_IsInitialized());
+    BME280_Measure();
+
     Display_Init(&hi2c1);
     HCSR04_Init(GPIOB, GPIO_PIN_15, GPIO_PIN_14, &htim15, BME280_GetHumidity, BME280_GetTemperature);
+
     for (;;) {
-        const float distance_m = HCSR04_MeasureDistanceInMeters();
-        if (BME280_IsInitialized()) {
+        float distance_m = 0.0f;
+        state = HCSR04_MeasureDistanceInMetersNonBlocking(&distance_m, state);
+        if (state == HCSR04_DONE) {
+            state = HCSR04_BEGIN;
             BME280_Measure();
-            Console_Print("Temperature: %.2f \r\n", BME280_GetTemperature());
-            Console_Print("Humidity: %.2f \r\n", BME280_GetHumidity());
-            Console_Print("Pressure: %.2f \r\n", BME280_GetPressure());
-            Display_Print("Humid:%.2fTemp:%.2f Dist:%.2fcm", BME280_GetHumidity(), BME280_GetTemperature(),
+            Display_Print("Temp:%.2f Dist:%.2fcm", BME280_GetTemperature(),
                           HCSR04_IsValidDistance(distance_m) ? to_cm(distance_m) : 0.0f);
-        } else {
-            Display_Print("Humidity: N/A %d\r\n", count++);
         }
-        osDelay(1000);
     }
     /* USER CODE END Starti2cUsersTask */
 }
