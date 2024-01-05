@@ -416,26 +416,6 @@ static float to_cm(float meters) {
     return meters * 100.0f;
 }
 
-void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
-    static uint16_t first = 0;
-    static uint16_t second = 0;
-    static bool first_edge = true;
-
-    if (htim == &htim15) {
-        if (first_edge) {
-            first = HAL_TIM_ReadCapturedValue(&htim15, TIM_CHANNEL_1);
-            first_edge = false;
-        } else {
-            second = HAL_TIM_ReadCapturedValue(&htim15, TIM_CHANNEL_1);
-            first_edge = true;
-            // time elapsed:
-            const uint16_t elapsed = second - first;
-            HCSR04_ElapsedTimeMeasuredCallback(elapsed);
-        }
-
-    }
-}
-
 /**
 * @brief Function implementing the i2cBusUsersTask thread.
 * @param argument: Not used
@@ -445,22 +425,19 @@ _Noreturn
 /* USER CODE END Header_Starti2cUsersTask */
 void Starti2cUsersTask(void *argument) {
     /* USER CODE BEGIN Starti2cUsersTask */
-    /* Infinite loop */
-    static int count = 0;
-    static HCSR04_Execution_State_t state = HCSR04_BEGIN;
+
     Console_Init(&huart2);
     BME280_Init(OSRS_16, OSRS_16, OSRS_16, MODE_NORMAL, T_SB_0p5, IIR_16);
     assert(BME280_IsInitialized());
     BME280_Measure();
-
     Display_Init(&hi2c1);
     HCSR04_Init(GPIOB, GPIO_PIN_15, GPIO_PIN_14, &htim15, BME280_GetHumidity, BME280_GetTemperature);
 
-    for (;;) {
-        float distance_m = 0.0f;
+    float distance_m = HCSR04_MeasureDistanceInMeters();
+    static HCSR04_Execution_State_t state = HCSR04_BEGIN;
+    while (true) {
         state = HCSR04_MeasureDistanceInMetersNonBlocking(&distance_m, state);
         if (state == HCSR04_DONE) {
-            state = HCSR04_BEGIN;
             BME280_Measure();
             Display_Print("Temp:%.2f Dist:%.2fcm", BME280_GetTemperature(),
                           HCSR04_IsValidDistance(distance_m) ? to_cm(distance_m) : 0.0f);
