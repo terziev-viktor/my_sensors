@@ -121,7 +121,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
     } else {
         second = HAL_TIM_ReadCapturedValue(self.htim, TIM_CHANNEL_1);
         if (second < first) {
-            // overflow
+            // the timer counter is 16 bit, so it will overflow at UINT16_MAX + 1
             second += UINT16_MAX;
         }
         HCSR04_ElapsedTimeMeasuredCallback(second - first);
