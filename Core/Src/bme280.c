@@ -318,6 +318,7 @@ uint32_t bme280_compensate_H_int32(int32_t adc_H) {
  * the values will be stored in the parameters passed to the function
  */
 void BME280_Measure(void) {
+    assert(self.initialized);
     if (BMEReadRaw() == 0) {
         if (tRaw == 0x800000) self.Temperature = 0; // value in case temp measurement was disabled
         else {

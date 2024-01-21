@@ -152,9 +152,8 @@ struct Display {
 
 static Display self;
 
-void Display_WriteCommand(uint8_t cmd) {
-    assert(self.initialized == true);
-    assert(HAL_I2C_Mem_Write(self.p_hi2c1, SSD1306_I2C_ADDR, SSD1306_I2C_CMD_ADDR, 1, &cmd, 1, HAL_MAX_DELAY) == HAL_OK);
+bool Display_WriteCommand(uint8_t cmd) {
+    return (HAL_I2C_Mem_Write(self.p_hi2c1, SSD1306_I2C_ADDR, SSD1306_I2C_CMD_ADDR, 1, &cmd, 1, HAL_MAX_DELAY) == HAL_OK);
 }
 
 void Display_WriteData(uint8_t *buffer, size_t buff_size) {
@@ -170,65 +169,65 @@ bool Display_FillBuffer(uint8_t const *const buf, const uint32_t len) {
     return false;
 }
 
-void Display_SetOn(const bool on) {
+bool Display_SetOn(const bool on) {
     const uint8_t cmd = on ? 0xAF : 0xAE;
-    Display_WriteCommand(cmd);
+    return Display_WriteCommand(cmd);
 }
 
 void Display_Init(I2C_HandleTypeDef * p_hi2c1) {
     assert(self.initialized == false);
     self.p_hi2c1 = p_hi2c1;
-    self.initialized = true;
-    Display_SetOn(false);
-    Display_WriteCommand(0x20); // Set Memory Addressing Mode
-    Display_WriteCommand(0x00); // 00b,Horizontal Addressing Mode; 01b,Vertical Addressing Mode;
-    Display_WriteCommand(0xB0); // Set Page Start Address for Page Addressing Mode,0-7
+
+    self.initialized = Display_SetOn(false);
+    self.initialized = self.initialized && Display_WriteCommand(0x20); // Set Memory Addressing Mode
+    self.initialized = self.initialized && Display_WriteCommand(0x00); // 00b,Horizontal Addressing Mode; 01b,Vertical Addressing Mode;
+    self.initialized = self.initialized && Display_WriteCommand(0xB0); // Set Page Start Address for Page Addressing Mode,0-7
 #ifdef SSD1306_MIRROR_VERT
-    Display_WriteCommand(0xC0); // Mirror vertically
+    self.initialized = self.initialized && Display_WriteCommand(0xC0); // Mirror vertically
 #else
-    Display_WriteCommand(0xC8); //Set COM Output Scan Direction
+    self.initialized = self.initialized && Display_WriteCommand(0xC8); //Set COM Output Scan Direction
 #endif
 
-    Display_WriteCommand(0x00); //---set low column address
-    Display_WriteCommand(0x10); //---set high column address
-    Display_WriteCommand(0x40); //--set start line address
-    Display_SetContrast(0xFF);
+    self.initialized = self.initialized && Display_WriteCommand(0x00); //---set low column address
+    self.initialized = self.initialized && Display_WriteCommand(0x10); //---set high column address
+    self.initialized = self.initialized && Display_WriteCommand(0x40); //--set start line address
+    self.initialized = self.initialized && Display_SetContrast(0xFF);
 
 #ifdef SSD1306_MIRROR_HORIZ
-    Display_WriteCommand(0xA0); // Mirror horizontally
+    self.initialized = self.initialized && Display_WriteCommand(0xA0); // Mirror horizontally
 #else
-    Display_WriteCommand(0xA1); //--set segment re-map 0 to 127
+    self.initialized = self.initialized && Display_WriteCommand(0xA1); //--set segment re-map 0 to 127
 #endif
-    Display_WriteCommand(0xA6); //--set normal color
-    Display_WriteCommand(0x3F); // set hight to 64 pixels
-    Display_WriteCommand(0xA4); //0xa4,Output follows RAM content;0xa5,Output ignores RAM content
-    Display_WriteCommand(0xD3); //-set display offset - CHECK
-    Display_WriteCommand(0x00); //-not offset
-    Display_WriteCommand(0xD5); //--set display clock divide ratio/oscillator frequency
-    Display_WriteCommand(0xF0); //--set divide ratio
-    Display_WriteCommand(0xD9); //--set pre-charge period
-    Display_WriteCommand(0x22); //
-    Display_WriteCommand(0xDA); //--set com pins hardware configuration
-    Display_WriteCommand(0x12);
+    self.initialized = self.initialized && Display_WriteCommand(0xA6); //--set normal color
+    self.initialized = self.initialized && Display_WriteCommand(0x3F); // set hight to 64 pixels
+    self.initialized = self.initialized && Display_WriteCommand(0xA4); //0xa4,Output follows RAM content;0xa5,Output ignores RAM content
+    self.initialized = self.initialized && Display_WriteCommand(0xD3); //-set display offset - CHECK
+    self.initialized = self.initialized && Display_WriteCommand(0x00); //-not offset
+    self.initialized = self.initialized && Display_WriteCommand(0xD5); //--set display clock divide ratio/oscillator frequency
+    self.initialized = self.initialized && Display_WriteCommand(0xF0); //--set divide ratio
+    self.initialized = self.initialized && Display_WriteCommand(0xD9); //--set pre-charge period
+    self.initialized = self.initialized && Display_WriteCommand(0x22); //
+    self.initialized = self.initialized && Display_WriteCommand(0xDA); //--set com pins hardware configuration
+    self.initialized = self.initialized && Display_WriteCommand(0x12);
 
-    Display_WriteCommand(0xDB); //--set vcomh
-    Display_WriteCommand(0x20); //0x20,0.77xVcc
+    self.initialized = self.initialized && Display_WriteCommand(0xDB); //--set vcomh
+    self.initialized = self.initialized && Display_WriteCommand(0x20); //0x20,0.77xVcc
 
-    Display_WriteCommand(0x8D); //--set DC-DC enable
-    Display_WriteCommand(0x14); //
-    Display_SetOn(true); //--turn on SSD1306 panel
+    self.initialized = self.initialized && Display_WriteCommand(0x8D); //--set DC-DC enable
+    self.initialized = self.initialized && Display_WriteCommand(0x14); //
+    self.initialized = self.initialized && Display_SetOn(true); //--turn on SSD1306 panel
 
-    // Clear screen
-    Display_Fill(Black);
+    if (self.initialized) {
+        // Clear screen
+        Display_Fill(Black);
 
-    // Flush buffer to screen
-    Display_UpdateScreen();
+        // Flush buffer to screen
+        Display_UpdateScreen();
 
-    // Set default values for screen object
-    self.x = 0;
-    self.y = 0;
-
-    self.initialized = true;
+        // Set default values for screen object
+        self.x = 0;
+        self.y = 0;
+    }
 }
 
 void Display_Fill(DISPLAY_COLOR color) {
@@ -359,16 +358,19 @@ void Display_FillRectangle(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, DISPL
     }
 }
 
-void Display_SetContrast(const uint8_t value) {
+bool Display_SetContrast(const uint8_t value) {
     assert(self.initialized == true);
     static const uint8_t setContrastControlRegister = 0x81;
-    Display_WriteCommand(setContrastControlRegister);
-    Display_WriteCommand(value);
+    return Display_WriteCommand(setContrastControlRegister) && Display_WriteCommand(value);
 }
 
 bool Display_IsOn() {
     assert(self.initialized == true);
     return self.is_on;
+}
+
+bool Display_IsInitialized() {
+    return self.initialized;
 }
 
 void Display_Print(const char *format, ...) {
