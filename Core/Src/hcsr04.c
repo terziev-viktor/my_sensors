@@ -68,12 +68,12 @@ HCSR04_Execution_State_t HCSR04_MeasureDistanceInMetersNonBlocking(float *out_di
 
     switch (current_state) {
         case HCSR04_PRE_TRIGGER: {
-            HAL_GPIO_WritePin(self.GPIOx, self.trig_pin, GPIO_PIN_SET);
             self.non_blocking_state_memory.then = __HAL_TIM_GET_COUNTER(self.htim);
             self.non_blocking_state_memory.old_flag = self._elapsed_last_value_flag;
+            HAL_GPIO_WritePin(self.GPIOx, self.trig_pin, GPIO_PIN_SET);
         }
         case HCSR04_TRIGGER: {
-            if (__HAL_TIM_GET_COUNTER(self.htim) - self.non_blocking_state_memory.then < 10) {
+            if (__HAL_TIM_GET_COUNTER(self.htim) - self.non_blocking_state_memory.then < 11) {
                 return HCSR04_TRIGGER;
             }
         }

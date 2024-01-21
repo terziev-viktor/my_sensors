@@ -31,9 +31,10 @@ void Display_SetCursor(uint8_t x, uint8_t y);
 void Display_DrawLine(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, DISPLAY_COLOR color);
 void Display_DrawRectangle(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, DISPLAY_COLOR color);
 void Display_FillRectangle(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, DISPLAY_COLOR color);
-void Display_SetContrast(const uint8_t value);
-void Display_SetOn(const bool on);
+bool Display_SetContrast(const uint8_t value);
+bool Display_SetOn(const bool on);
 bool Display_IsOn();
+bool Display_IsInitialized();
 void Display_Print(const char *format, ...);
 
 #endif /* INC_DISPLAY_H_ */

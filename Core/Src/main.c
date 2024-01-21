@@ -80,7 +80,7 @@ static void MX_I2C1_Init(void);
 
 static void MX_TIM15_Init(void);
 
-void StartBlinkLed(void *argument);
+_Noreturn void StartBlinkLed(void *argument);
 
 _Noreturn void Starti2cUsersTask(void *argument);
 
@@ -399,6 +399,7 @@ static void MX_GPIO_Init(void) {
   * @param  argument: Not used
   * @retval None
   */
+_Noreturn
 /* USER CODE END Header_StartBlinkLed */
 void StartBlinkLed(void *argument) {
     /* USER CODE BEGIN 5 */
@@ -425,11 +426,11 @@ _Noreturn
 /* USER CODE END Header_Starti2cUsersTask */
 void Starti2cUsersTask(void *argument) {
     /* USER CODE BEGIN Starti2cUsersTask */
-
     Console_Init(&huart2);
     BME280_Init(OSRS_16, OSRS_16, OSRS_16, MODE_NORMAL, T_SB_0p5, IIR_16);
-    assert(BME280_IsInitialized());
-    BME280_Measure();
+    if(BME280_IsInitialized()) {
+        BME280_Measure();
+    }
     Display_Init(&hi2c1);
     HCSR04_Init(GPIOB, GPIO_PIN_15, GPIO_PIN_14, &htim15, BME280_GetHumidity, BME280_GetTemperature);
 
@@ -438,9 +439,13 @@ void Starti2cUsersTask(void *argument) {
     while (true) {
         state = HCSR04_MeasureDistanceInMetersNonBlocking(&distance_m, state);
         if (state == HCSR04_DONE) {
-            BME280_Measure();
-            Display_Print("Temp:%.2f Dist:%.2fcm", BME280_GetTemperature(),
-                          HCSR04_IsValidDistance(distance_m) ? to_cm(distance_m) : 0.0f);
+            if (BME280_IsInitialized()) {
+                BME280_Measure();
+            }
+            if (Display_IsInitialized()) {
+                Display_Print("Temp:%.2f Dist:%.2fcm", BME280_GetTemperature(),
+                              HCSR04_IsValidDistance(distance_m) ? to_cm(distance_m) : 0.0f);
+            }
         }
     }
     /* USER CODE END Starti2cUsersTask */
