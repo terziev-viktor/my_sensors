@@ -69,8 +69,8 @@ void Error_Handler(void);
 #define LD2_GPIO_Port GPIOA
 #define MOTORLATCH_Pin GPIO_PIN_6
 #define MOTORLATCH_GPIO_Port GPIOA
-#define MOTOR_PWM_Pin GPIO_PIN_7
-#define MOTOR_PWM_GPIO_Port GPIOA
+#define DCMOTOR1_PWM_Pin GPIO_PIN_7
+#define DCMOTOR1_PWM_GPIO_Port GPIOA
 #define MOTORENABLE_Pin GPIO_PIN_8
 #define MOTORENABLE_GPIO_Port GPIOA
 #define MOTORDATA_Pin GPIO_PIN_9

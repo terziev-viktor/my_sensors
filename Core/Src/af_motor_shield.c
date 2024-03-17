@@ -1,7 +1,6 @@
+#include "af_motor_shield.h"
 #include <stdbool.h>
 #include <assert.h>
-#include <string.h>
-#include "af_motor_shield.h"
 #include "stm32f3xx_hal_gpio.h"
 #include "main.h"
 
@@ -10,8 +9,9 @@
 struct AFMotorShield {
     uint8_t bitPosA;
     uint8_t bitPosB;
-    uint8_t num;
+    MOTOR_t num;
     uint32_t freq;
+    AFMotorShieldPeripheral peripheral;
     bool initialized;
 } AFMotorShield_DCMotor_1, AFMotorShield_DCMotor_2, AFMotorShield_DCMotor_3, AFMotorShield_DCMotor_4;
 
@@ -22,13 +22,6 @@ typedef struct AFMotorController {
 } AFMotorController;
 
 static AFMotorController MC;
-static AFMotorShieldPeripheral config;
-static bool peripheral_initialized = false;
-
-void AFMotorShield_InitPeripheral(AFMotorShieldPeripheral config) {
-    memcpy(&config, &config, sizeof(AFMotorShieldPeripheral));
-    peripheral_initialized = true;
-}
 
 void AFMotorController_LatchTx() {
     HAL_GPIO_WritePin(MOTORLATCH_GPIO_Port, MOTORLATCH_Pin, GPIO_PIN_RESET);
@@ -44,11 +37,7 @@ void AFMotorController_LatchTx() {
 }
 
 void AFMotorShield_SetSpeed(AFMotorShield * self, uint8_t speed) {
-    // pwm control is not implemented
-    assert(self->initialized);
-    config.htim->Instance->ARR = self->freq;
-    (void) self;
-    (void) speed;
+    assert(false && "Not Implemented");
 }
 
 static void AFMotorController_Enable() {
@@ -56,16 +45,17 @@ static void AFMotorController_Enable() {
         MC.latch_state = 0;
         MC.initialized = true;
     }
+    assert(MC.initialized);
     MC.latch_state = 0;
     AFMotorController_LatchTx();
     HAL_GPIO_WritePin(MOTORENABLE_GPIO_Port, MOTORENABLE_Pin, GPIO_PIN_RESET);
 }
 
-AFMotorShield *AFMotorShield_InitDCMotor(uint8_t num, uint8_t freq) {
-    assert(peripheral_initialized);
+AFMotorShield * AFMotorShield_InitDCMotor(MOTOR_t num, const uint8_t freq, const AFMotorShieldPeripheral peripheral) {
     AFMotorController_Enable();
     switch (num) {
-        case 1: {
+        case MOTOR_1: {
+            assert(!AFMotorShield_DCMotor_1.initialized);
             MC.latch_state &= ~BV(MOTOR1_A) & ~BV(MOTOR1_B); // set both motor pins to 0
             AFMotorController_LatchTx();
             AFMotorShield_DCMotor_1.bitPosA = MOTOR1_A;
@@ -73,9 +63,11 @@ AFMotorShield *AFMotorShield_InitDCMotor(uint8_t num, uint8_t freq) {
             AFMotorShield_DCMotor_1.num = num;
             AFMotorShield_DCMotor_1.freq = freq;
             AFMotorShield_DCMotor_1.initialized = true;
+            AFMotorShield_DCMotor_1.peripheral = peripheral;
             return &AFMotorShield_DCMotor_1;
         }
-        case 2: {
+        case MOTOR_2: {
+            assert(!AFMotorShield_DCMotor_2.initialized);
             MC.latch_state &= ~BV(MOTOR2_A) & ~BV(MOTOR2_B); // set both motor pins to 0
             AFMotorController_LatchTx();
             AFMotorShield_DCMotor_2.bitPosA = MOTOR2_A;
@@ -83,9 +75,11 @@ AFMotorShield *AFMotorShield_InitDCMotor(uint8_t num, uint8_t freq) {
             AFMotorShield_DCMotor_2.num = num;
             AFMotorShield_DCMotor_2.freq = freq;
             AFMotorShield_DCMotor_2.initialized = true;
+            AFMotorShield_DCMotor_2.peripheral = peripheral;
             return &AFMotorShield_DCMotor_2;
         }
-        case 3: {
+        case MOTOR_3: {
+            assert(!AFMotorShield_DCMotor_3.initialized);
             MC.latch_state &= ~BV(MOTOR3_A) & ~BV(MOTOR3_B); // set both motor pins to 0
             AFMotorController_LatchTx();
             AFMotorShield_DCMotor_3.bitPosA = MOTOR3_A;
@@ -93,9 +87,11 @@ AFMotorShield *AFMotorShield_InitDCMotor(uint8_t num, uint8_t freq) {
             AFMotorShield_DCMotor_3.num = num;
             AFMotorShield_DCMotor_3.freq = freq;
             AFMotorShield_DCMotor_3.initialized = true;
+            AFMotorShield_DCMotor_3.peripheral = peripheral;
             return &AFMotorShield_DCMotor_3;
         }
-        case 4: {
+        case MOTOR_4: {
+            assert(!AFMotorShield_DCMotor_4.initialized);
             MC.latch_state &= ~BV(MOTOR4_A) & ~BV(MOTOR4_B); // set both motor pins to 0
             AFMotorController_LatchTx();
             AFMotorShield_DCMotor_4.bitPosA = MOTOR4_A;
@@ -103,12 +99,13 @@ AFMotorShield *AFMotorShield_InitDCMotor(uint8_t num, uint8_t freq) {
             AFMotorShield_DCMotor_4.num = num;
             AFMotorShield_DCMotor_4.freq = freq;
             AFMotorShield_DCMotor_4.initialized = true;
+            AFMotorShield_DCMotor_4.peripheral = peripheral;
             return &AFMotorShield_DCMotor_4;
         }
     }
 }
 
-void AFMotorShield_RunDCMotor(AFMotorShield * self, enum DCMotorCommand command) {
+void AFMotorShield_RunDCMotor(AFMotorShield * self, DCMotorCommand command) {
     switch (command) {
         case FORWARD: {
             MC.latch_state |= BV(self->bitPosA);

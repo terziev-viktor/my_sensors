@@ -1,5 +1,5 @@
 #include <stdint-gcc.h>
-#include "stm32f3xx_hal_tim.h"
+#include "stm32f3xx_hal.h"
 
 struct AFMotorShield;
 typedef struct AFMotorShield AFMotorShield;
@@ -19,19 +19,25 @@ typedef struct AFMotorShield AFMotorShield;
 #define MOTOR3_A 5
 #define MOTOR3_B 7
 
-enum DCMotorCommand {
+typedef enum DCMotorCommand {
     FORWARD = 1,
     BACKWARD = 2,
     BRAKE = 3,
     RELEASE = 4
-};
+} DCMotorCommand;
+
+typedef enum MOTOR_t {
+    MOTOR_1 = 1,
+    MOTOR_2 = 2,
+    MOTOR_3 = 3,
+    MOTOR_4 = 4
+} MOTOR_t;
 
 typedef struct AFMotorShieldPeripheral {
     TIM_HandleTypeDef *htim;
     uint16_t channel;
-}AFMotorShieldPeripheral;
+} AFMotorShieldPeripheral;
 
-void AFMotorShield_InitPeripheral(AFMotorShieldPeripheral config);
-AFMotorShield * AFMotorShield_InitDCMotor(uint8_t num, uint8_t freq);
+AFMotorShield * AFMotorShield_InitDCMotor(MOTOR_t num, uint8_t freq, AFMotorShieldPeripheral peripheral);
 void AFMotorShield_SetSpeed(AFMotorShield * self, uint8_t speed);
-void AFMotorShield_RunDCMotor(AFMotorShield * self, enum DCMotorCommand command);
+void AFMotorShield_RunDCMotor(AFMotorShield * self, DCMotorCommand command);
