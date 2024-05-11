@@ -149,6 +149,7 @@ int main(void) {
     });
     // Uncomment to run the motor
     AFMotorShield_RunDCMotor(motor4, FORWARD);
+    AFMotorShield_RunDCMotor(motor3, FORWARD);
     /* USER CODE END 2 */
 
     /* Init scheduler */
